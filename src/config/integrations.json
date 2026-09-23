@@ -1,0 +1,66 @@
+[
+  {
+    "id": "crm-users",
+    "name": "CRM Users",
+    "description": "Internal CRM system's user records, exposed with standardized field names.",
+    "prefix": "/api/users",
+    "target": "http://localhost:4001",
+    "targetPath": "/crm/users",
+    "methods": ["GET"],
+    "auth": { "type": "none" },
+    "rateLimit": { "windowMs": 60000, "max": 100 },
+    "transform": {
+      "response": {
+        "fields": {
+          "user_id": "id",
+          "full_name": "name",
+          "email_address": "email",
+          "signup_ts": { "to": "signupDate", "fn": "toISODate" }
+        }
+      }
+    }
+  },
+  {
+    "id": "billing-invoices",
+    "name": "Billing Invoices",
+    "description": "Internal billing system's invoice records, with amounts normalized to dollars.",
+    "prefix": "/api/invoices",
+    "target": "http://localhost:4001",
+    "targetPath": "/billing/invoices",
+    "methods": ["GET"],
+    "auth": { "type": "none" },
+    "rateLimit": { "windowMs": 60000, "max": 100 },
+    "transform": {
+      "response": {
+        "fields": {
+          "invoiceId": "id",
+          "cust": "customer",
+          "amountCents": { "to": "amount", "fn": "centsToDollars" },
+          "status": "status",
+          "due": { "to": "dueDate", "fn": "toISODate" }
+        }
+      }
+    }
+  },
+  {
+    "id": "public-posts",
+    "name": "Public Posts (external example)",
+    "description": "Example of proxying a real third-party API (JSONPlaceholder) through the gateway.",
+    "prefix": "/api/posts",
+    "target": "https://jsonplaceholder.typicode.com",
+    "targetPath": "/posts",
+    "methods": ["GET"],
+    "auth": { "type": "none" },
+    "rateLimit": { "windowMs": 60000, "max": 30 },
+    "transform": {
+      "response": {
+        "fields": {
+          "id": "id",
+          "title": "title",
+          "body": "content",
+          "userId": "authorId"
+        }
+      }
+    }
+  }
+]

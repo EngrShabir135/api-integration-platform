@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gateway Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12172A;
+    --panel: #1A2040;
+    --panel-line: #2B3260;
+    --text: #E7E9F3;
+    --muted: #8B92B3;
+    --amber: #E8A33D;
+    --teal: #4FB8AE;
+    --coral: #E5586B;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    min-height: 100vh;
+  }
+  aside {
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--panel-line);
+    padding: 24px 20px;
+  }
+  aside .brand {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin-bottom: 2px;
+  }
+  aside .brand span { color: var(--amber); }
+  aside .subbrand {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  aside nav a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 0;
+    border-bottom: 1px solid transparent;
+  }
+  aside nav a.active { color: var(--text); }
+  main { flex: 1; padding: 28px 32px; max-width: 1040px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .tagline { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+
+  .keybar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .keybar input {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    width: 240px;
+  }
+  .keybar button {
+    background: var(--amber);
+    color: #1A1305;
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .keybar .status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 4px;
+    padding: 16px 18px;
+  }
+  .stat .label { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .stat .value { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 500; }
+  .stat.hero .value { color: var(--amber); }
+  .stat .unit { font-size: 12px; color: var(--muted); margin-left: 4px; }
+
+  h2 { font-size: 14px; margin: 0 0 12px; color: var(--muted); font-weight: 500; }
+
+  table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--panel-line); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--panel-line); }
+  .pill { padding: 2px 7px; border-radius: 3px; font-size: 11px; }
+  .pill.ok { background: rgba(79,184,174,0.15); color: var(--teal); }
+  .pill.err { background: rgba(229,88,107,0.15); color: var(--coral); }
+
+  .breakdown { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  .b-row { display: grid; grid-template-columns: 140px 1fr 60px; align-items: center; gap: 10px; }
+  .b-row .name { font-size: 12px; }
+  .b-track { height: 6px; background: var(--panel-line); border-radius: 3px; overflow: hidden; }
+  .b-fill { height: 100%; background: var(--teal); }
+  .b-row .count { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: right; }
+
+  .empty { color: var(--muted); font-size: 12px; padding: 20px 0; }
+</style>
+</head>
+<body>
+  <aside>
+    <div class="brand">gateway<span>.</span>console</div>
+    <div class="subbrand">v1.0.0</div>
+    <nav>
+      <a class="active" href="/admin">Overview</a>
+      <a href="/docs">API Docs</a>
+    </nav>
+  </aside>
+  <main>
+    <h1>Traffic overview</h1>
+    <p class="tagline">Live view of requests flowing through every configured integration.</p>
+
+    <div class="keybar">
+      <input id="adminKey" type="password" placeholder="x-admin-key" />
+      <button onclick="saveKeyAndLoad()">Connect</button>
+      <span class="status" id="status">not connected</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat hero">
+        <div class="label">Total requests</div>
+        <div class="value" id="totalRequests">–</div>
+      </div>
+      <div class="stat">
+        <div class="label">Error rate</div>
+        <div class="value" id="errorRate">–<span class="unit">%</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Avg latency</div>
+        <div class="value" id="avgLatency">–<span class="unit">ms</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Last 60s</div>
+        <div class="value" id="lastMinute">–</div>
+      </div>
+    </div>
+
+    <h2>By integration</h2>
+    <div class="breakdown" id="breakdown"><div class="empty">Connect with your admin key to load data.</div></div>
+
+    <h2>Recent requests</h2>
+    <table id="logTable">
+      <thead>
+        <tr><th>Time</th><th>Integration</th><th>Method</th><th>Path</th><th>Status</th><th>Client</th><th>Latency</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+<script>
+  let pollTimer = null;
+
+  function saveKeyAndLoad() {
+    const key = document.getElementById('adminKey').value.trim();
+    if (!key) return;
+    localStorage.setItem('gatewayAdminKey', key);
+    load();
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(load, 5000);
+  }
+
+  async function load() {
+    const key = localStorage.getItem('gatewayAdminKey') || document.getElementById('adminKey').value.trim();
+    const statusEl = document.getElementById('status');
+    if (!key) { statusEl.textContent = 'not connected'; return; }
+    try {
+      const res = await fetch('/admin/metrics', { headers: { 'x-admin-key': key } });
+      if (!res.ok) { statusEl.textContent = 'invalid key'; return; }
+      const data = await res.json();
+      statusEl.textContent = 'connected — refreshing every 5s';
+      render(data);
+    } catch (e) {
+      statusEl.textContent = 'connection error';
+    }
+  }
+
+  function render(data) {
+    const s = data.summary;
+    document.getElementById('totalRequests').textContent = s.totalRequests;
+    document.getElementById('errorRate').innerHTML = s.errorRate + '<span class="unit">%</span>';
+    document.getElementById('avgLatency').innerHTML = s.avgLatencyMs + '<span class="unit">ms</span>';
+    document.getElementById('lastMinute').textContent = s.requestsLastMinute;
+
+    const breakdownEl = document.getElementById('breakdown');
+    if (!s.integrationBreakdown.length) {
+      breakdownEl.innerHTML = '<div class="empty">No requests recorded yet. Call one of the /api/* routes to see traffic here.</div>';
+    } else {
+      const max = Math.max(...s.integrationBreakdown.map((b) => b.requests), 1);
+      breakdownEl.innerHTML = s.integrationBreakdown.map((b) => `
+        <div class="b-row">
+          <div class="name">${b.integration}</div>
+          <div class="b-track"><div class="b-fill" style="width:${(b.requests / max) * 100}%"></div></div>
+          <div class="count">${b.requests} req</div>
+        </div>
+      `).join('');
+    }
+
+    const tbody = document.querySelector('#logTable tbody');
+    if (!data.recent.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No requests yet.</td></tr>';
+    } else {
+      tbody.innerHTML = data.recent.map((r) => `
+        <tr>
+          <td>${new Date(r.timestamp).toLocaleTimeString()}</td>
+          <td>${r.integration}</td>
+          <td>${r.method}</td>
+          <td>${r.path}</td>
+          <td><span class="pill ${r.success ? 'ok' : 'err'}">${r.statusCode}</span></td>
+          <td>${r.apiKey || '–'}</td>
+          <td>${r.durationMs}ms</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // Auto-connect if a key was saved from a previous visit
+  const saved = localStorage.getItem('gatewayAdminKey');
+  if (saved) {
+    document.getElementById('adminKey').value = saved;
+    load();
+    pollTimer = setInterval(load, 5000);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+[
+  { "key": "demo-key-123", "name": "Demo Client", "active": true },
+  { "key": "partner-key-456", "name": "Partner Co", "active": true }
+]
